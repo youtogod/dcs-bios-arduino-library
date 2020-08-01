@@ -38,29 +38,29 @@ do not come with their own build system, we are just putting everything into the
 
 	namespace DcsBios {
 		ProtocolParser parser;
-		
+
 		ISR(USART0_RX_vect) {
 			volatile uint8_t c = UDR0;
 			parser.processCharISR(c);
 		}
-		
+
 		void setup() {
 			PRR0 &= ~(1<<PRUSART0);
 			UBRR0H = 0;
 			UBRR0L = 3; // 250000 bps
 			UCSR0A = 0;
 			UCSR0C = (1<<UCSZ00) | (1<<UCSZ01);
-			
+
 			UCSR0B = (1<<RXEN0) | (1<<TXEN0) | (1<<RXCIE0);
-			
-			
+
+
 		}
-		
+
 		void loop() {
 			PollingInput::pollInputs();
 			ExportStreamListener::loopAll();
 		}
-		
+
 		static void usart_tx(const char* str) {
 			const char* c = str;
 			while (*c) {
@@ -68,7 +68,7 @@ do not come with their own build system, we are just putting everything into the
 				UDR0 = *c++; // write byte to TX buffer
 			}
 		}
-		
+
 		bool tryToSendDcsBiosMessage(const char* msg, const char* arg) {
 			DcsBios::usart_tx(msg);
 			DcsBios::usart_tx(" ");
@@ -90,12 +90,15 @@ do not come with their own build system, we are just putting everything into the
 				parser.processChar(Serial.read());
 			}
 			PollingInput::pollInputs();
-			ExportStreamListener::loopAll();			
+			ExportStreamListener::loopAll();
 		}
 		bool tryToSendDcsBiosMessage(const char* msg, const char* arg) {
 			Serial.write(msg); Serial.write(' '); Serial.write(arg); Serial.write('\n');
 			DcsBios::PollingInput::setMessageSentOrQueued();
 			return true;
+		}
+		void println(const char* msg) {
+		    Serial.println(msg);
 		}
 	}
 #endif
@@ -125,7 +128,7 @@ namespace DcsBios {
 }
 
 #ifndef DCSBIOS_RS485_MASTER
-namespace DcsBios {	
+namespace DcsBios {
 	inline bool sendDcsBiosMessage(const char* msg, const char* arg) {
 		while(!tryToSendDcsBiosMessage(msg, arg));
 		return true;
